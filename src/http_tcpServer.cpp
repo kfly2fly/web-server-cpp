@@ -24,13 +24,13 @@ namespace
 
 namespace http
 {
+
     TcpServer::TcpServer(std::string ip_address, int port)
         : m_ip_address{ip_address}, m_port{port}, m_socket{},
           m_new_socket{}, m_incomingMessage{}, m_socketAddress{},
           m_socketAddress_len{sizeof(m_socketAddress)},
-          m_serverMessage{}
+          m_serverMessage{buildResponse()}, m_wsaData()
     {
-
         m_socketAddress.sin_family = AF_INET;
         m_socketAddress.sin_port = htons(m_port);
         m_socketAddress.sin_addr.s_addr = inet_addr(m_ip_address.c_str());
@@ -39,25 +39,23 @@ namespace http
         {
             std::ostringstream ss;
             ss << "Failed to start server with PORT: " << ntohs(m_socketAddress.sin_port);
+            log(ss.str());
         }
     }
 
     TcpServer::~TcpServer()
     {
-
         closeServer();
     }
 
     int TcpServer::startServer()
     {
-
         if (WSAStartup(MAKEWORD(2, 0), &m_wsaData) != 0)
         {
             exitWithError("WSAStartup failed");
         }
 
         m_socket = socket(AF_INET, SOCK_STREAM, 0);
-
         if (m_socket < 0)
         {
             exitWithError("Cannot create socket");
@@ -90,7 +88,7 @@ namespace http
             exitWithError("Socket listen failed");
         }
         std::ostringstream ss;
-        ss << "\n*** Listening on ADRESS: "
+        ss << "\n*** Listening on ADDRESS: "
            << inet_ntoa(m_socketAddress.sin_addr)
            << " PORT: " << ntohs(m_socketAddress.sin_port)
            << " ***\n\n";
@@ -122,8 +120,6 @@ namespace http
 
     void TcpServer::acceptConnection(SOCKET &new_socket)
     {
-        std::cout << "acceptConnection()" << std::endl;
-
         new_socket = accept(m_socket, (sockaddr *)&m_socketAddress, &m_socketAddress_len);
         if (new_socket < 0)
         {
@@ -137,18 +133,17 @@ namespace http
 
     std::string TcpServer::buildResponse()
     {
-        std::cout << "buildResponse()" << std::endl;
-
         std::string htmlFile = "<!DOCTYPE html><html lang=\"en\"><body><h1> HOME </h1><p> Hello from your Server :) </p></body></html>";
         std::ostringstream ss;
-        ss << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " << htmlFile.size() << "\n\n" << htmlFile;
+        ss << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: "
+           << htmlFile.size() << "\n\n"
+           << htmlFile;
+
         return ss.str();
     }
 
     void TcpServer::sendResponse()
     {
-        std::cout << "sendResponse()" << std::endl;
-
         int bytesSent;
         long totalBytesSent = 0;
 
