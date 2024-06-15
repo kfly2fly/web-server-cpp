@@ -62,7 +62,7 @@ namespace http
             return 1;
         }
 
-        if (bind(m_socket, (sockaddr *)&m_socketAddress, m_socketAddress_len) < 0)
+        if (bind(m_socket, (sockaddr *) &m_socketAddress, m_socketAddress_len) < 0)
         {
             exitWithError("Cannot connect socket to address");
             return 1;
@@ -111,6 +111,8 @@ namespace http
             std::ostringstream ss;
             ss << "----- Recieved Request from Client -----\n\n";
             log(ss.str());
+
+            printf("%s", buffer);
 
             sendResponse();
 
